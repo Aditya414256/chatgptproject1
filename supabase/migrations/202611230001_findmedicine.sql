@@ -1,5 +1,7 @@
--- New schema for FindMedicine. Review conflicts before applying to an existing database.
+-- Initial schema for a fresh isolated FindMedicine Supabase project.
 create extension if not exists pgcrypto;
+create extension if not exists pg_cron with schema pg_catalog;
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values ('prescriptions','prescriptions',false,5242880,array['image/jpeg','image/png','application/pdf']) on conflict(id) do nothing;
 create table if not exists public.profiles(
  id uuid primary key references auth.users(id) on delete cascade,
  full_name text not null default '', phone text not null default '',
@@ -95,6 +97,9 @@ create policy "notification self read" on public.notifications for select to aut
 create policy "notification self mark read" on public.notifications for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
 -- No direct client inserts, deletes or status updates on orders: use security-definer RPC.
 revoke all on public.orders,public.order_items from anon,authenticated;
+grant select on public.profiles,public.stores,public.medicines,public.store_inventory to authenticated;
+grant update(full_name,phone) on public.profiles to authenticated;
+grant update(name,address,lat,lng,is_open,offers_delivery,serviceable_pincodes) on public.stores to authenticated;
 grant select on public.orders,public.order_items to authenticated;
 revoke all on public.notifications from anon,authenticated;
 grant select on public.notifications to authenticated;
@@ -103,6 +108,8 @@ revoke insert,delete on public.store_inventory from authenticated;
 revoke update on public.store_inventory from authenticated;
 grant update(price,stock) on public.store_inventory to authenticated;
 revoke insert,delete on public.medicines from authenticated;
+revoke all on function public.create_signup_profile() from public,anon,authenticated;
+revoke all on function public.protect_profile_role() from public,anon,authenticated;
 
 -- Distance calculation and stock summary. Location arguments are never stored.
 create or replace function public.nearby_stores(user_lat double precision,user_lng double precision,radius_km double precision,medicine_ids uuid[])
@@ -137,6 +144,7 @@ $$;
 -- Order state transition enforcement and refund on nonfulfilled cancellation.
 create or replace function public.enforce_order_status() returns trigger language plpgsql set search_path=public,pg_temp as $$
 begin
+ if new.status<>old.status and (new.id,new.customer_id,new.store_id,new.fulfilment_type,new.delivery_address,new.delivery_pincode,new.prescription_path,new.handover_code,new.total,new.created_at,new.expires_at) is distinct from (old.id,old.customer_id,old.store_id,old.fulfilment_type,old.delivery_address,old.delivery_pincode,old.prescription_path,old.handover_code,old.total,old.created_at,old.expires_at) then raise exception 'Order fields are immutable'; end if;
  if new.status=old.status then
    if row(new.*) is distinct from row(old.*) then raise exception 'Order fields are immutable'; end if;
    return new;
