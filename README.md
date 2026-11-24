@@ -1,57 +1,63 @@
 # FindMedicine — chatgptproject1
 
-College project only. **Not for real medical use.**
+College demonstration only. **Not for real medical use.**
 
-## Stack
-React + TypeScript + Vite, React Router, Tailwind v4, TanStack Query, Supabase Auth/Postgres/RLS/Storage/Realtime and Playwright. No maps.
+## New independent Supabase project
 
-## Local setup
+This repository uses a **separate** Supabase project named `chatgptproject1`, hosted in Mumbai (ap-south-1).
 
-```bash
+- Project ref: `kkkolpwdxzgscpbagmfk`
+- Dashboard: https://supabase.com/dashboard/project/kkkolpwdxzgscpbagmfk
+- The new database schema was installed on November 24, 2026.
+- All existing MediFind and FindMedi projects were deliberately left untouched.
+- **Do not re-run database migrations against the original FindMedi project.**
+
+## Run locally (Windows PowerShell)
+
+```powershell
+git pull origin main
+Copy-Item .env.example .env
 npm install
-cp .env.example .env
-# Fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY from your existing Supabase project.
 npm run dev
 ```
 
-On Windows, replace `cp` with `copy`. Never commit `.env` or service-role keys.
+Open the localhost URL printed by Vite (normally http://localhost:5173).
 
-## Database
+`.env.example` holds a browser-safe **publishable** Supabase key for this isolated project. `.env` is ignored by Git. Never commit a Supabase service_role key, secret key, or database password.
 
-**Before running migrations:** review `supabase/migrations/` against your existing database; this project may have objects with the same name. Use a disposable Supabase project for testing where possible. Your existing storage bucket and pg_cron extension must not be recreated. For the referenced project:
+## What's set up
 
-```bash
-npx supabase login
-npx supabase link --project-ref ilumcvjseevbpkgtscth
-npx supabase db push
-```
+- React + TypeScript + Vite, React Router, Tailwind CSS v4, TanStack Query
+- Supabase Auth with customer and store_owner roles
+- Seven public database tables with Row Level Security enabled
+- 16 sample medicines
+- Private `prescriptions` storage bucket (5MB; JPG, PNG, PDF)
+- PostgreSQL order creation and status-change functions, including inventory locks and stock restoration
+- Automated expiry of unanswered orders using pg_cron, one-minute schedule
+- Self-service store setup on the store-owner dashboard
 
-Type the database password directly into your terminal if the CLI asks. Do not put it in chat. Inspect migration conflicts before applying.
+## Start using the app
 
-## Accounts
+1. Start the dev server and register as **store_owner** with a valid email. Confirm your email if Supabase requires it.
+2. Open **Store orders**. Enter a pharmacy name, full address, delivery pincodes and allow browser geolocation to create the store.
+3. The new store gets initial **demo** inventory for all medicines. Review/edit stock and prices in **Inventory**.
+4. In another browser window, register as **customer**, select medicines and use pickup location or a matching delivery pincode.
+5. Select the pharmacy, place an order and check status changes in **My orders**.
+6. Create up to four independent store-owner accounts if you want the four-store demo. There are currently no pre-created account credentials.
 
-Sign up in the app as `customer` or `store_owner`. You must provision owner stores and their inventory using the dashboard/SQL before orders can be placed. Demo passwords are intentionally **not embedded in the repository**. Supabase Auth users cannot be created safely by inserting arbitrary passwords into SQL tables.
+For pickup of prescription-required medicines, the customer brings the prescription to the store. Delivery requires a file upload.
 
-## Test notification flow
+## Database reproducibility
 
-Open a normal browser window as a customer and an incognito window as a store owner. In the owner window click **Enable alerts**. Place an order from the customer and verify that it appears in the owner dashboard and that status changes appear in My orders. For automated smoke tests run:
+The SQL source is in `supabase/migrations/`. It is **already applied** to the new project. These files are for reproducibility, not instructions to push duplicate migrations to this configured project.
 
-```bash
+For another *empty* Supabase project only, install Supabase CLI, link to the *new target project*, and run `npx supabase db push` after reviewing the migrations and ensuring they are not already present. The configured project already has applied migrations via the connected API and may have migration-history differences from local CLI files.
+
+## Testing
+
+```powershell
 npx playwright install chromium
 npm run test:e2e
 ```
 
-Full backend integration and concurrency scenarios remain unverified; see `PROGRESS.md`.
-
-## Repository creation
-
-Create a blank GitHub repo named `chatgptproject1` and run:
-
-```bash
-git init
-git add .
-git commit -m "feat: initial FindMedicine scaffold"
-git branch -M main
-git remote add origin https://github.com/Aditya414256/chatgptproject1.git
-git push -u origin main
-```
+The live authenticated end-to-end flow, concurrent stock race, and cross-role access behavior have **not yet passed** a complete automated test suite. Do not treat the site as production-ready. See `PROGRESS.md`.
