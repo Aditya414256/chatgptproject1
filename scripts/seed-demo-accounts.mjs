@@ -58,10 +58,18 @@ assertOk(medErr,'Load medicines');
 if(!medicines?.length)throw new Error('Missing medicines. Apply the database migrations first.');
 
 const results=[];
+function saveCredentials(){
+ writeFileSync(CREDENTIAL_FILE,JSON.stringify({
+  project_ref:PROJECT_REF,generated_at:new Date().toISOString(),
+  note:'Local-only demonstration credentials. Do not commit or share this file.',
+  accounts:results
+ },null,2),{encoding:'utf8',mode:0o600});
+}
 for(const [index,a] of accounts.entries()){
  if(existing.some(u=>u.email?.toLowerCase()===a.email.toLowerCase())){
   console.log('Already exists, skipped:',a.email);
   results.push({email:a.email,role:a.role,password:null,status:'already exists; password unchanged'});
+  saveCredentials();
   continue;
  }
  const password=randomBytes(15).toString('base64url')+'aA1!';
@@ -89,14 +97,10 @@ for(const [index,a] of accounts.entries()){
   assertOk(invErr,'Seed inventory for '+a.email);
  }
  results.push({email:a.email,role:a.role,password,status:'created'});
+ saveCredentials();
  console.log('Created:',a.email, a.role);
 }
 
-writeFileSync(CREDENTIAL_FILE,JSON.stringify({
- project_ref:PROJECT_REF,generated_at:new Date().toISOString(),
- note:'Local-only demonstration credentials. Do not commit or share this file.',
- accounts:results
-},null,2),{encoding:'utf8',mode:0o600,flag:'wx'});
 console.log('\nCreated credentials file:',CREDENTIAL_FILE);
 console.log('Never commit this file. This script is safe to rerun: it never resets existing user passwords.');
 console.log('Verify sign-in in the app for each role. These demo accounts are not for real patient data.');
