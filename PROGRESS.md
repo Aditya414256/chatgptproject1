@@ -12,7 +12,8 @@
 
 ## Remaining / unverified
 - [ ] End-to-end build and actual browser sign-in, store creation, order placement, status tracking
-- [ ] New store owners and customer demo accounts (signup needed, no passwords stored)
+- [x] Secure Auth Admin seeding script committed for one customer and four owners (credentials generated locally, never committed)
+- [ ] Execute seeding script with new project's service-role key on the user's computer; demo accounts not created yet
 - [ ] Four individual stores and their different pincodes / inventory demo
 - [ ] Verify strict role permissions, realtime reconnect, notification audio, customer details visibility
 - [ ] Inventory-aware partial store selection and prescription access edge cases
