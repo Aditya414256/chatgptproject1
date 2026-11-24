@@ -1,0 +1,12 @@
+-- Run AFTER creating 4 store_owner accounts via the app and confirming their emails.
+-- Replace the four placeholder UUIDs with the real auth.users ids from Supabase Auth.
+-- Never insert fake auth.users records or commit passwords.
+-- Use realistic coordinates around Shirpur, Maharashtra, India.
+-- Example, repeat with the actual 4 account ids and different names:
+-- insert into public.stores(owner_id,name,address,lat,lng,offers_delivery,serviceable_pincodes)
+-- values ('REPLACE_WITH_REAL_OWNER_UUID','Shirpur Central Pharmacy','Main Road, Shirpur, Maharashtra 425405, India',21.3502,74.8804,true,array['425405','425406'])
+-- on conflict(owner_id) do nothing;
+-- insert into public.store_inventory(store_id,medicine_id,price,stock)
+-- select s.id,m.id,round((20+random()*80)::numeric,2),case when random()<0.3 then 0 else 15 end
+-- from public.stores s cross join public.medicines m where s.owner_id='REPLACE_WITH_REAL_OWNER_UUID'
+-- on conflict(store_id,medicine_id) do nothing;
