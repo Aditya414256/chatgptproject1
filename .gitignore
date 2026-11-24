@@ -5,3 +5,6 @@ dist
 playwright-report
 test-results
 .DS_Store
+
+# Generated local demonstration logins — never commit
+demo-credentials.local.json
